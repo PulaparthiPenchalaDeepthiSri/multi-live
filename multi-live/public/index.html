@@ -149,6 +149,14 @@
   </div>
 
   <div id="map"></div>
+
+  <script>
+  // placeholder so Google Maps callback always exists
+  window.initMap = function () {
+    console.log("initMap placeholder loaded");
+  };
+</script>
+
   <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAjpGN4ickxPdE7kqmapEm65d-tnH4iLrQ&callback=initMap"></script>
 
   <!-- App Script -->
@@ -156,5 +164,6 @@
 
 </body>
 </html>
+
 
 
