@@ -2,8 +2,10 @@ import { db } from "./firebase.js";
 import { ref, onValue, set, remove }
 from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
-const BASE_URL = "https://multi-live-vivg.vercel.app";
+/* 🔒 Always use current domain */
+const BASE_URL = window.location.origin;
 
+/* ---------- HELPERS ---------- */
 function makeSlug(text) {
   return text
     .toLowerCase()
@@ -12,21 +14,38 @@ function makeSlug(text) {
     .replace(/[^a-z0-9-]/g, "");
 }
 
-let map;                 // ⬅️ important
+/* ---------- MAP STATE ---------- */
+let map = null;
 const markers = {};
 const tripsDiv = document.getElementById("trips");
 
-/* 🔑 GOOGLE MAP INIT (called by Google Maps itself) */
-window.initMap = function () {
+/* ---------- SAFE GOOGLE MAP INIT ---------- */
+/* ❌ No callback
+   ❌ No window.initMap
+   ✅ Poll until Google Maps is ready */
+function waitForGoogleMaps() {
+  if (window.google && window.google.maps) {
+    initMap();
+  } else {
+    setTimeout(waitForGoogleMaps, 100);
+  }
+}
+
+function initMap() {
+  if (map) return; // prevent double init
+
   map = new google.maps.Map(document.getElementById("map"), {
     center: { lat: 20.5937, lng: 78.9629 },
     zoom: 5,
   });
 
-  startFirebaseListener(); // 🔥 start listening ONLY after map is ready
-};
+  startFirebaseListener();
+}
 
-/* ---- ADD TRIP ---- */
+/* Start checking immediately */
+waitForGoogleMaps();
+
+/* ---------- ACTIONS ---------- */
 window.addTrip = function () {
   const driverName = prompt("Driver Name");
   const leaderName = prompt("Leader Name");
@@ -38,17 +57,15 @@ window.addTrip = function () {
     driverName,
     leaderName,
     status: "active",
-    createdAt: Date.now()
+    createdAt: Date.now(),
   });
 };
 
-/* ---- COPY LINK ---- */
 window.copyLink = function (link) {
   navigator.clipboard.writeText(link);
   alert("Link copied. Send it to the driver.");
 };
 
-/* ---- END TRIP ---- */
 window.endTrip = function (driverId) {
   set(ref(db, "trips/" + driverId + "/status"), "ended");
 
@@ -58,7 +75,6 @@ window.endTrip = function (driverId) {
   }
 };
 
-/* ---- DELETE TRIP ---- */
 window.deleteTrip = function (driverId) {
   if (!confirm("Delete this trip permanently?")) return;
 
@@ -71,7 +87,7 @@ window.deleteTrip = function (driverId) {
   }
 };
 
-/* 🔥 Firebase listener (called AFTER map init) */
+/* ---------- FIREBASE LISTENER ---------- */
 function startFirebaseListener() {
   onValue(ref(db), (snapshot) => {
     const data = snapshot.val() || {};
@@ -83,7 +99,6 @@ function startFirebaseListener() {
     Object.entries(trips).forEach(([driverId, trip]) => {
       const isEnded = trip.status === "ended";
       const loc = locations[driverId];
-
       const link = `${BASE_URL}/driver.html?id=${driverId}`;
 
       const div = document.createElement("div");
