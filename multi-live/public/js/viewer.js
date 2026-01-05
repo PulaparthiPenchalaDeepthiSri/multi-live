@@ -2,7 +2,7 @@ import { db } from "./firebase.js";
 import { ref, onValue, set, remove }
 from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
-const BASE_URL = "https://multilive-sooty.vercel.app";
+const BASE_URL = "https://multi-live-vivg.vercel.app";
 
 function makeSlug(text) {
   return text
@@ -127,3 +127,4 @@ function startFirebaseListener() {
     });
   });
 }
+
